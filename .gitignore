@@ -1,0 +1,7 @@
+*.exe
+*.dll
+*.swp
+
+.vscode
+cmd/gimmick/*.gmk
+cmd/gimmick/*.exe
