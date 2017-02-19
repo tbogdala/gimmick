@@ -61,6 +61,5 @@ func (env *Environment) SetupPrimitives() {
 	env.Vars["cons"] = Primitive(primCons)
 	env.Vars["car"] = Primitive(primCar)
 	env.Vars["cdr"] = Primitive(primCdr)
-	env.Vars["begin"] = Primitive(primBegin)
 	env.Vars["timed-apply"] = Primitive(primTimedApply)
 }

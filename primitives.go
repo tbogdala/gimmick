@@ -5,21 +5,6 @@ package gimmick
 
 import "time"
 
-// (begin <sexp>+)
-// (begin) == ()
-func primBegin(sexp Value, env *Environment) Value {
-	var last Value = List{}
-	sexpList, isList := sexp.(List)
-	if !isList || len(sexpList) < 2 {
-		return last
-	}
-
-	for _, subSexp := range sexpList[1:] {
-		last = Eval(subSexp, env)
-	}
-	return last
-}
-
 func primCons(sexp Value, env *Environment) Value {
 	sexpList, isList := sexp.(List)
 	if !isList {
@@ -388,11 +373,12 @@ func primEqvList(a, b Value, env *Environment) Bool {
 }
 
 // (timed-apply <proc> <args>*)
+// will return 0.0 on errors
 func primTimedApply(sexp Value, env *Environment) Value {
 	sexpList, isList := sexp.(List)
 	sexpListLen := len(sexpList)
 	if !isList || sexpListLen < 2 {
-		return Float(-1.0)
+		return Float(0.0)
 	}
 
 	// find the function to apply. this will either be a
@@ -403,7 +389,7 @@ func primTimedApply(sexp Value, env *Environment) Value {
 		var foundProc bool
 		proc, foundProc = env.Find(sym)
 		if !foundProc {
-			return Float(-2.0)
+			return Float(0.0)
 		}
 	} else {
 		proc = Eval(sexpList[1], env)
@@ -412,11 +398,11 @@ func primTimedApply(sexp Value, env *Environment) Value {
 	// is it a user defined function
 	procedure, isProcedure := proc.(Procedure)
 	if !isProcedure {
-		return Float(-4.0)
+		return Float(0.0)
 	}
 	// make sure it's called with the same number of arguments
 	if len(sexpList)-2 != len(procedure.Args) {
-		return Float(-5.0)
+		return Float(0.0)
 	}
 
 	pEnv := NewEnvironment(procedure.ParentEnv)

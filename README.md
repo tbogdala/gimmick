@@ -43,7 +43,7 @@ command is supported.
 To start the REPL interpreter, run the following:
 
 ```bash
-./gimmick repl
+./gimmick repl <file_to_load.gmk>*
 ```
 
 At this point, you can enter in code and evaluate it in a multiline fashion.
@@ -70,6 +70,7 @@ Interpreter Features
 * basic lisp list functions: `cons`, `car`, `cdr`
 * function construction (no variable arity yet): `lambda`
 * basic timing for benchmarks: `(timed-apply <proc> <args>*)`
+* tail-call optimized
 
 
 To Do
@@ -77,7 +78,6 @@ To Do
 
 Many major features are yet to come:
 
-* tail-call support in procedure evaluation
 * transition unit tests to gimmick itself
 * module system
 * structures

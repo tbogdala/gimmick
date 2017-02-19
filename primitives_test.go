@@ -434,6 +434,8 @@ func TestBasicLambdaForms(t *testing.T) {
 		(define foo (lambda (x y z) (+ x y z))) 
 		(foo 5 10 20))`)
 
+	// test calling a function that doesn't exist
+	doTestEvalForList(t, env, List{}, "(x3 500 500 500.1)")
 }
 
 func TestBasicTimedApply(t *testing.T) {
