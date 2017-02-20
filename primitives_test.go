@@ -46,7 +46,7 @@ func doTestEvalForList(t *testing.T, baseEnv *Environment, expected List, code s
 	listVal, found := result.(List)
 
 	if !found || len(listVal) != len(expected) || !cmpLists(listVal, expected) {
-		t.Errorf("Failed to evaluate to the correct value for \"%s\". Got: %v and expecxted: %v",
+		t.Errorf("Failed to evaluate to the correct value for \"%s\". Got: %v and expected: %v",
 			code, result, expected)
 	}
 }
@@ -350,15 +350,15 @@ func TestBasicListOps(t *testing.T) {
 	env := NewEnvironment(nil)
 	env.SetupPrimitives()
 
-	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3)}, "(cons 1 2 3)")
-	doTestEvalForList(t, env, List{Integer(1), Integer(2), Float(3.14)}, "(cons 1 2 3.14)")
+	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3)}, "(list 1 2 3)")
+	doTestEvalForList(t, env, List{Integer(1), Integer(2), Float(3.14)}, "(list 1 2 3.14)")
 	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3), List{Float(3.1), Float(3.2)}},
-		"(cons 1 2 3 (cons 3.1 3.2))")
+		"(list 1 2 3 (list 3.1 3.2))")
 	doTestEvalForList(t, env, List{Integer(1), List{Float(3.1), Float(3.2)}, Integer(2), List{Integer(3)}},
-		"(cons 1 (cons 3.1 3.2) 2 (cons 3))")
+		"(list 1 (list 3.1 3.2) 2 (list 3))")
 
-	doTestEvalForInt(t, env, 1, "(car (cons 1 2 3))")
-	doTestEvalForInt(t, env, 4, "(car (cons 4 2 3) 2)")
+	doTestEvalForInt(t, env, 1, "(car (list 1 2 3))")
+	doTestEvalForInt(t, env, 4, "(car (list 4 2 3) 2)")
 }
 
 func TestBasicConditionals(t *testing.T) {
@@ -389,6 +389,28 @@ func TestBasicQuote(t *testing.T) {
 	doTestEvalForBool(t, env, false, "(quote false)")
 	doTestEvalForInt(t, env, 1, "(quote 1)")
 	doTestEvalForFloat(t, env, 1.1, "(quote 1.1)")
+}
+
+func TestBasicQuasiquote(t *testing.T) {
+	// setup the test environment
+	env := NewEnvironment(nil)
+	env.SetupPrimitives()
+
+	doTestEvalForList(t, env, List{Integer(5), Integer(5), Integer(5)}, "(quasiquote (5 5 5))")
+	doTestEvalForList(t, env, List{Integer(5)}, "(quasiquote ((unquote (+ 2 3))))")
+	doTestEvalForList(t, env, List{Integer(5), Integer(5)}, "(quasiquote (5 (unquote (+ 2 3))))")
+	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3), Integer(4), Integer(5)},
+		"(quasiquote (1 (unquote-splicing (list 2 3)) 4 5))")
+	doTestEvalForList(t, env, List{Integer(5), List{Symbol("list"), Integer(5)}},
+		"(quasiquote (5 (list (unquote (+ 2 3)))))")
+	doTestEvalForList(t, env, List{Integer(5), List{Integer(5)}},
+		"(quasiquote (5 (quasiquote ((unquote (+ 2 3))))))")
+
+	// edge cases
+	doTestEvalForList(t, env, List{}, "(quasiquote)")
+	doTestEvalForList(t, env, List{}, "(quasiquote 5)") // needs a list
+	doTestEvalForList(t, env, List{Integer(5)}, "(quasiquote (5 (unquote)))")
+	doTestEvalForList(t, env, List{Integer(5)}, "(quasiquote (5 (unquote-splicing)))")
 }
 
 func TestBasicLambdaForms(t *testing.T) {

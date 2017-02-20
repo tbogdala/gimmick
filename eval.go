@@ -160,11 +160,62 @@ func Eval(v Value, env *Environment) Value {
 }
 
 // expandQuasiquote can be called recurisvely while expanding a quasiquote sexp.
-//
 // quasiquote has special functions to evaluate within the list:
 //	* unquote
 //  * unquote-splicing
 func expandQuasiquote(listSexp List, env *Environment) Value {
-	// quote would return this: the list param without eval.
-	return listSexp
+	// intial call of this function will have listSexp == the entire
+	// list to expand.
+	//
+	// e.g. (quasiquote (1 (unquote (+ 5 5)) 21))
+	// or ... `(1 ,(+ 5 5) 21)
+	// and this function gets listSexp of: (1 (unquote (+ 5 5)) 21)
+
+	// loop through all items in the list to see if there's something
+	// to unquote or unquote-splice.
+	newList := List{}
+	for _, sexp := range listSexp {
+		// check to see if it's a list. if it's not a list,
+		// then the rest of the things pass unmodified.
+		subList, isList := sexp.(List)
+		if isList && len(subList) > 0 {
+			// if it is a list, see if it starts with a symbol we treat specially
+			firstSymbol, firstIsSymbol := subList[0].(Symbol)
+			if firstIsSymbol {
+				switch firstSymbol {
+				case "unquote":
+					if len(subList) > 1 {
+						newList = append(newList, Eval(subList[1], env))
+					}
+				case "unquote-splicing":
+					if len(subList) > 1 {
+						splice := Eval(subList[1], env)
+						spliceList, isSpliceList := splice.(List)
+						if isSpliceList {
+							for _, spliceItem := range spliceList {
+								newList = append(newList, spliceItem)
+							}
+						}
+					}
+				case "quasiquote":
+					if len(subList) > 1 {
+						subSubList, isSubSubList := subList[1].(List)
+						if isSubSubList {
+							newList = append(newList, expandQuasiquote(subSubList, env))
+						}
+					}
+				default:
+					// we've determined it's not a special list, so pass it on
+					// to a recursive call to see if we got any other special
+					// comands to process.
+					newList = append(newList, expandQuasiquote(subList, env))
+				}
+			}
+		} else {
+			// not a list, so pass it on
+			newList = append(newList, sexp)
+		}
+	}
+
+	return newList
 }

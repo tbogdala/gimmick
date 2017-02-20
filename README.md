@@ -50,10 +50,11 @@ At this point, you can enter in code and evaluate it in a multiline fashion.
 
 The following special commands are supported:
 
-* `.quit` exits the REPL
-* `.print` displays the current sexp being entered 
-* `.reset` resets the environment currently used for evaluation
+* `.help` prints the list of special commands
 * `.parse` shows the parse message for the current sexp
+* `.print` displays the current sexp being entered 
+* `.quit` exits the REPL
+* `.reset` resets the environment currently used for evaluation
 * `.type` shows the type of the last result value
 * `[empty line]` erases the current command in a multi-line context
 
@@ -66,8 +67,9 @@ Interpreter Features
 * supports types: int64, float64, boolean, lists, symbols and strings
 * basic math operations: `+`, `-`, `*`, `/`
 * basic comparisons: `<`, `>`, `<=`, `>=`, `eqv?`
-* basic special forms: `quote`, `if`, `define`, `begin`
-* basic lisp list functions: `cons`, `car`, `cdr`
+* basic special forms: `quote`, `quasiquote`, `unquote`, `unquote-splicing`, 
+  `if`, `define`, `begin`
+* basic lisp list functions: `list`, `car`, `cdr`
 * function construction (no variable arity yet): `lambda`
 * basic timing for benchmarks: `(timed-apply <proc> <args>*)`
 * tail-call optimized

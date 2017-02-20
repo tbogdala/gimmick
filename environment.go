@@ -58,7 +58,7 @@ func (env *Environment) SetupPrimitives() {
 	env.Vars[">"] = Primitive(primGreater)
 	env.Vars[">="] = Primitive(primGreaterEq)
 	env.Vars["eqv?"] = Primitive(primEqv)
-	env.Vars["cons"] = Primitive(primCons)
+	env.Vars["list"] = Primitive(primCons)
 	env.Vars["car"] = Primitive(primCar)
 	env.Vars["cdr"] = Primitive(primCdr)
 	env.Vars["timed-apply"] = Primitive(primTimedApply)
