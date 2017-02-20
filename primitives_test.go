@@ -397,14 +397,27 @@ func TestBasicQuasiquote(t *testing.T) {
 	env.SetupPrimitives()
 
 	doTestEvalForList(t, env, List{Integer(5), Integer(5), Integer(5)}, "(quasiquote (5 5 5))")
+	doTestEvalForList(t, env, List{Integer(5), Integer(5), Integer(5)}, "`(5 5 5)")
 	doTestEvalForList(t, env, List{Integer(5)}, "(quasiquote ((unquote (+ 2 3))))")
+	doTestEvalForList(t, env, List{Integer(5)}, "`(,(+ 2 3))")
 	doTestEvalForList(t, env, List{Integer(5), Integer(5)}, "(quasiquote (5 (unquote (+ 2 3))))")
+	doTestEvalForList(t, env, List{Integer(5), Integer(5)}, "``(5 ,(+ 2 3))")
 	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3), Integer(4), Integer(5)},
 		"(quasiquote (1 (unquote-splicing (list 2 3)) 4 5))")
+	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3), Integer(4), Integer(5)},
+		"`(1 ,@(list 2 3) 4 5)")
+	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3), Integer(4), Integer(5)},
+		"`(1 ,@(list 2 3) ,(+ 2 2) 5)")
 	doTestEvalForList(t, env, List{Integer(5), List{Symbol("list"), Integer(5)}},
 		"(quasiquote (5 (list (unquote (+ 2 3)))))")
+	doTestEvalForList(t, env, List{Integer(5), List{Symbol("list"), Integer(5)}},
+		"`(5 (list ,(+ 2 3)))")
 	doTestEvalForList(t, env, List{Integer(5), List{Integer(5)}},
 		"(quasiquote (5 (quasiquote ((unquote (+ 2 3))))))")
+	doTestEvalForList(t, env, List{Integer(5), List{Integer(5)}},
+		"`(5 `(,(+ 2 3)))")
+	doTestEvalForList(t, env, List{Symbol("firstname"), String("JOHN")},
+		"(begin (define name \"JOHN\") `(firstname ,name))")
 
 	// edge cases
 	doTestEvalForList(t, env, List{}, "(quasiquote)")

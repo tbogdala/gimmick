@@ -83,6 +83,9 @@ const (
 	tokenSTRING
 	tokenOPENPARENS
 	tokenCLOSEPARENS
+	tokenQUASIQUOTE
+	tokenUNQUOTE
+	tokenUNQUOTESPLICING
 )
 
 // token is the structure representing each token read in

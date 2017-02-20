@@ -294,3 +294,22 @@ up"))`
 
 	doParseTestWithKnownGood(t, code, knownGood)
 }
+
+func TestBasicQuotes(t *testing.T) {
+	code := "(begin (define x `(5 5)))"
+
+	knownGood := []token{}
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "begin", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "x", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "`(", Type: tokenQUASIQUOTE, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "5", Type: tokenINTEGER, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "5", Type: tokenINTEGER, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+
+	doParseTestWithKnownGood(t, code, knownGood)
+}

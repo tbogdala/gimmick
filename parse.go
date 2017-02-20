@@ -38,7 +38,7 @@ func buildValueFromTokens(tokens []token) (Value, []token, error) {
 	remainingTokens := tokens[1:]
 
 	switch t.Type {
-	case tokenOPENPARENS:
+	case tokenOPENPARENS, tokenQUASIQUOTE:
 		// create the new list
 		sexp := List{}
 		// loop through tokens until we get a close parens
@@ -53,19 +53,29 @@ func buildValueFromTokens(tokens []token) (Value, []token, error) {
 			remainingTokens = remaining
 		}
 
+		// if this was a quasiquote, then what we do is put all of this
+		// in a separate list that starts with the symbol `quasiquote`.
+		var finalSexp List
+		if t.Type == tokenQUASIQUOTE {
+			finalSexp = List{Symbol("quasiquote"), sexp}
+		} else {
+			// no change if this was a non-quasiquote parens
+			finalSexp = sexp
+		}
+
 		// go one more token forward in the remaining list to remove the close parens,
 		// but only if there are tokens after it
 		if len(remainingTokens) > 1 {
-			return sexp, remainingTokens[1:], nil
+			return finalSexp, remainingTokens[1:], nil
 		}
 		// if there are no tokens left, that means we hit the end without a close parens,
 		// so issue a parse error
 		if len(remainingTokens) == 0 {
-			return sexp, nil, NewSyntaxError("Missing ')' to close sexp.", t.Filename, t.LineNumber)
+			return finalSexp, nil, NewSyntaxError("Missing ')' to close sexp.", t.Filename, t.LineNumber)
 		}
 
 		// theres just 1 token left and it was a close parens, so just return the sexp
-		return sexp, nil, nil
+		return finalSexp, nil, nil
 
 	case tokenCLOSEPARENS:
 		// close parens are handled in the loop for open parens, so extra ones are errors
@@ -97,6 +107,38 @@ func buildValueFromTokens(tokens []token) (Value, []token, error) {
 
 	case tokenSTRING:
 		return String(t.Token), remainingTokens, nil
+
+	case tokenUNQUOTE:
+		if len(remainingTokens) == 0 {
+			return nil, remainingTokens, NewSyntaxError("Unexpected \",\" found with no more remaining tokens.", t.Filename, t.LineNumber)
+		}
+		uqList := List{Symbol("unquote")}
+
+		// take the next value
+		newVal, remainingTokens, err := buildValueFromTokens(remainingTokens)
+		if err != nil {
+			return nil, remainingTokens, err
+		}
+
+		// add it to the unquote list and return that.
+		uqList = append(uqList, newVal)
+		return uqList, remainingTokens, nil
+
+	case tokenUNQUOTESPLICING:
+		if len(remainingTokens) == 0 {
+			return nil, remainingTokens, NewSyntaxError("Unexpected \",@\" found with no more remaining tokens.", t.Filename, t.LineNumber)
+		}
+		uqList := List{Symbol("unquote-splicing")}
+
+		// take the next value
+		newVal, remainingTokens, err := buildValueFromTokens(remainingTokens)
+		if err != nil {
+			return nil, remainingTokens, err
+		}
+
+		// add it to the unquote list and return that.
+		uqList = append(uqList, newVal)
+		return uqList, remainingTokens, nil
 
 	case tokenILLEGAL:
 		return nil, remainingTokens, NewSyntaxError(fmt.Sprintf("Illegal token found while parsing (%s).", t.Token), t.Filename, t.LineNumber)
@@ -173,6 +215,21 @@ func tokenize(source *bufio.Reader, filename string) []token {
 			tokens = append(tokens, token{Token: "(", Type: tokenOPENPARENS, LineNumber: currentLine})
 		} else if ch == ')' {
 			tokens = append(tokens, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: currentLine})
+		} else if ch == '`' {
+			next := read(source)
+			if next == '(' {
+				tokens = append(tokens, token{Token: "`(", Type: tokenQUASIQUOTE, LineNumber: currentLine})
+			} else {
+				unread(source)
+			}
+		} else if ch == ',' {
+			next := read(source)
+			if next != '@' {
+				unread(source)
+				tokens = append(tokens, token{Token: ",", Type: tokenUNQUOTE, LineNumber: currentLine})
+			} else {
+				tokens = append(tokens, token{Token: ",@", Type: tokenUNQUOTESPLICING, LineNumber: currentLine})
+			}
 		} else {
 			unread(source)
 			tokens = append(tokens, scanAtom(source, filename, currentLine))

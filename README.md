@@ -69,6 +69,8 @@ Interpreter Features
 * basic comparisons: `<`, `>`, `<=`, `>=`, `eqv?`
 * basic special forms: `quote`, `quasiquote`, `unquote`, `unquote-splicing`, 
   `if`, `define`, `begin`
+* special syntax for: `quasiquote` as backquote (\`), `unquote` as a comma (,),
+  and `unquote-splicing` as comma-ampersand (,@)
 * basic lisp list functions: `list`, `car`, `cdr`
 * function construction (no variable arity yet): `lambda`
 * basic timing for benchmarks: `(timed-apply <proc> <args>*)`
