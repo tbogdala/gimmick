@@ -30,7 +30,7 @@ const (
 	versionString  = `VERSION 0.1.0`
 	welcomeMessage = `GIMMICK REPL. COPYRIGHT 2017 BY TIMOTHY BOGDALA <TDB@ANIMAL-MACHINE.COM>.
 THIS IS OPEN SOURCE SOFTWARE UNDER THE BSD LICENSE.
-` + versionString + `
+` + versionString + ` | https://github.com/tbogdala/gimmick
 `
 )
 
@@ -177,6 +177,10 @@ func runRepl() error {
 		case ".type":
 			// .type shows the type of the last result
 			fmt.Printf("Type of last result is: %s\n\n", gimmick.GetTypeString(lastResult))
+			continue
+		case ".help":
+			fmt.Printf("Current special commands:\n")
+			fmt.Printf("\t.help, .parse, .print, .quit, .reset, .type\n\n")
 			continue
 		case "":
 			// empty line erases current command

@@ -7,6 +7,28 @@ import (
 	"testing"
 )
 
+func doParseTestWithKnownGood(t *testing.T, code string, knownGood []token) {
+	// tests multi-line strings as well
+	tokens := buildTokens(code)
+
+	// test the tokens against known good copies
+	if len(knownGood) != len(tokens) {
+		t.Errorf("Amount of known good tokens is different from tokens generated (%d vs %d)", len(knownGood), len(tokens))
+		return
+	}
+	for i, tok := range tokens {
+		if tok.Type != knownGood[i].Type {
+			t.Errorf("Known good token type is different from generated token (%d vs %d) for token #%d", knownGood[i].Type, tok.Type, i)
+		}
+		if tok.Token != knownGood[i].Token {
+			t.Errorf("Known good token is different from generated token (%s vs %s) for token #%d", knownGood[i].Token, tok.Token, i)
+		}
+		if tok.LineNumber != knownGood[i].LineNumber {
+			t.Errorf("Known good token line number is different from generated token (%d vs %d) for token #%d", knownGood[i].LineNumber, tok.LineNumber, i)
+		}
+	}
+}
+
 func TestBasicEval(t *testing.T) {
 	// setup an environment with a test value for 'x'
 	env := NewEnvironment(nil)
@@ -76,6 +98,17 @@ func TestBasicEval(t *testing.T) {
 		t.Errorf("Failed to evaluate a bool and/or get the correct value.")
 	}
 
+	// Test evaluate a string expression
+	code = "\"REDRUM\""
+	sexp, err = ParseString(code)
+	if err != nil {
+		t.Errorf("Failed to parse string test expression.")
+	}
+	result = Eval(sexp, env)
+	stringVal, found := result.(String)
+	if !found || stringVal != "REDRUM" {
+		t.Errorf("Failed to evaluate a string and/or get the correct value.")
+	}
 }
 
 func TestBasicParsing(t *testing.T) {
@@ -145,61 +178,36 @@ func cmpList(one List, two List) bool {
 
 func TestBasicTokenSingleline(t *testing.T) {
 	code := "(begin (define r 10) (define rf 10.0) (define t true) (* pi (* r r)))"
-	tokens := buildTokens(code)
-
-	// make sure we got the right amount of tokens
-	if len(tokens) != 27 {
-		t.Errorf("Got an incorrect number of tokens (%d)\n\tcode: %v\n\ttokens:%v", len(tokens), code, tokens)
-	}
-
 	knownGood := []token{}
-	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS})
-	knownGood = append(knownGood, token{Token: "begin", Type: tokenSYMBOL})
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "begin", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "r", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "10", Type: tokenINTEGER, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "rf", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "10.0", Type: tokenFLOAT, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "t", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "true", Type: tokenBOOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "*", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "pi", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "*", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "r", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "r", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
 
-	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS})
-	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL})
-	knownGood = append(knownGood, token{Token: "r", Type: tokenSYMBOL})
-	knownGood = append(knownGood, token{Token: "10", Type: tokenINTEGER})
-	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS})
-
-	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS})
-	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL})
-	knownGood = append(knownGood, token{Token: "rf", Type: tokenSYMBOL})
-	knownGood = append(knownGood, token{Token: "10.0", Type: tokenFLOAT})
-	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS})
-
-	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS})
-	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL})
-	knownGood = append(knownGood, token{Token: "t", Type: tokenSYMBOL})
-	knownGood = append(knownGood, token{Token: "true", Type: tokenBOOL})
-	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS})
-
-	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS})
-	knownGood = append(knownGood, token{Token: "*", Type: tokenSYMBOL})
-	knownGood = append(knownGood, token{Token: "pi", Type: tokenSYMBOL})
-
-	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS})
-	knownGood = append(knownGood, token{Token: "*", Type: tokenSYMBOL})
-	knownGood = append(knownGood, token{Token: "r", Type: tokenSYMBOL})
-
-	knownGood = append(knownGood, token{Token: "r", Type: tokenSYMBOL})
-	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS})
-	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS})
-	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS})
-
-	// test the tokens against known good copies
-	if len(knownGood) != len(tokens) {
-		t.Errorf("Amount of known good tokens is different from tokens generated (%d vs %d)", len(knownGood), len(tokens))
-		return
-	}
-	for i, tok := range tokens {
-		if tok.Type != knownGood[i].Type {
-			t.Errorf("Known good token type is different from generated token (%d vs %d) for token #%d", knownGood[i].Type, tok.Type, i)
-		}
-		if tok.Token != knownGood[i].Token {
-			t.Errorf("Known good token is different from generated token (%s vs %s) for token #%d", knownGood[i].Token, tok.Token, i)
-		}
-	}
+	doParseTestWithKnownGood(t, code, knownGood)
 }
 
 func TestBasicTokenMultiline(t *testing.T) {
@@ -209,63 +217,31 @@ func TestBasicTokenMultiline(t *testing.T) {
 
 
 (* pi (* r r)))`
-	tokens := buildTokens(code)
-
-	// make sure we got the right amount of tokens
-	if len(tokens) != 17 {
-		t.Errorf("Got an incorrect number of tokens (%d)\n\tcode: %v\n\ttokens:%v", len(tokens), code, tokens)
-	}
 
 	knownGood := []token{}
 	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
 	knownGood = append(knownGood, token{Token: "begin", Type: tokenSYMBOL, LineNumber: 1})
 	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 3})
 	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL, LineNumber: 3})
-
 	knownGood = append(knownGood, token{Token: "r", Type: tokenSYMBOL, LineNumber: 3})
 	knownGood = append(knownGood, token{Token: "10", Type: tokenINTEGER, LineNumber: 3})
 	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 3})
-
 	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 6})
 	knownGood = append(knownGood, token{Token: "*", Type: tokenSYMBOL, LineNumber: 6})
 	knownGood = append(knownGood, token{Token: "pi", Type: tokenSYMBOL, LineNumber: 6})
-
 	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 6})
 	knownGood = append(knownGood, token{Token: "*", Type: tokenSYMBOL, LineNumber: 6})
 	knownGood = append(knownGood, token{Token: "r", Type: tokenSYMBOL, LineNumber: 6})
-
 	knownGood = append(knownGood, token{Token: "r", Type: tokenSYMBOL, LineNumber: 6})
 	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 6})
 	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 6})
 	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 6})
 
-	// test the tokens against known good copies
-	if len(knownGood) != len(tokens) {
-		t.Errorf("Amount of known good tokens is different from tokens generated (%d vs %d)", len(knownGood), len(tokens))
-		return
-	}
-	for i, tok := range tokens {
-		if tok.Type != knownGood[i].Type {
-			t.Errorf("Known good token type is different from generated token (%d vs %d) for token #%d", knownGood[i].Type, tok.Type, i)
-		}
-		if tok.Token != knownGood[i].Token {
-			t.Errorf("Known good token is different from generated token (%s vs %s) for token #%d", knownGood[i].Token, tok.Token, i)
-		}
-		if tok.LineNumber != knownGood[i].LineNumber {
-			t.Errorf("Known good token line number is different from generated token (%d vs %d) for token #%d", knownGood[i].LineNumber, tok.LineNumber, i)
-		}
-	}
+	doParseTestWithKnownGood(t, code, knownGood)
 }
 
 func TestBasicLambda(t *testing.T) {
 	code := "(lambda (x) (+ x 1))"
-	tokens := buildTokens(code)
-
-	// make sure we got the right amount of tokens
-	if len(tokens) != 11 {
-		t.Errorf("Got an incorrect number of tokens (%d)\n\tcode: %v\n\ttokens:%v", len(tokens), code, tokens)
-	}
-
 	knownGood := []token{}
 	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
 	knownGood = append(knownGood, token{Token: "lambda", Type: tokenSYMBOL, LineNumber: 1})
@@ -280,20 +256,41 @@ func TestBasicLambda(t *testing.T) {
 	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
 	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
 
-	// test the tokens against known good copies
-	if len(knownGood) != len(tokens) {
-		t.Errorf("Amount of known good tokens is different from tokens generated (%d vs %d)", len(knownGood), len(tokens))
-		return
-	}
-	for i, tok := range tokens {
-		if tok.Type != knownGood[i].Type {
-			t.Errorf("Known good token type is different from generated token (%d vs %d) for token #%d", knownGood[i].Type, tok.Type, i)
-		}
-		if tok.Token != knownGood[i].Token {
-			t.Errorf("Known good token is different from generated token (%s vs %s) for token #%d", knownGood[i].Token, tok.Token, i)
-		}
-		if tok.LineNumber != knownGood[i].LineNumber {
-			t.Errorf("Known good token line number is different from generated token (%d vs %d) for token #%d", knownGood[i].LineNumber, tok.LineNumber, i)
-		}
-	}
+	doParseTestWithKnownGood(t, code, knownGood)
+}
+
+func TestBasicStringsTest(t *testing.T) {
+	// tests multi-line strings as well
+	code := `(begin (define str "hello world!") (define str2 "what is
+up"))`
+
+	knownGood := []token{}
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "begin", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "str", Type: tokenSYMBOL, LineNumber: 1})
+
+	knownGood = append(knownGood, token{Token: "hello world!", Type: tokenSTRING, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "str2", Type: tokenSYMBOL, LineNumber: 1})
+
+	knownGood = append(knownGood, token{Token: "what is\nup", Type: tokenSTRING, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+
+	doParseTestWithKnownGood(t, code, knownGood)
+
+	// test #2 is simpler ... just a define
+	code = "(define str \"hello world!\")"
+	knownGood = []token{}
+	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "define", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "str", Type: tokenSYMBOL, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: "hello world!", Type: tokenSTRING, LineNumber: 1})
+	knownGood = append(knownGood, token{Token: ")", Type: tokenCLOSEPARENS, LineNumber: 1})
+
+	doParseTestWithKnownGood(t, code, knownGood)
 }

@@ -19,6 +19,8 @@ func Eval(v Value, env *Environment) Value {
 			return e
 		case Bool:
 			return e
+		case String:
+			return e
 		case List:
 			// handle some special forms
 			if len(e) == 0 {
@@ -31,36 +33,24 @@ func Eval(v Value, env *Environment) Value {
 			}
 
 			// handle the special forms
-			if car == "if" {
-				// special form for if. If the condition doesn't evaluate
-				// to a bool, then neither conseq or altern get evaluated and
-				// an empty list is returned.
-				if len(e) <= 2 {
-					// must atleast have (if <cond> <conseq>)
-					return List{}
-				}
-
-				cond := Eval(e[1], env)
-				condBool, isCondBool := cond.(Bool)
-				if !isCondBool {
-					return List{}
-				}
-
-				// tail-call update the value being evaulated in the loop
-				if condBool {
-					v = e[2]
-				} else if len(e) >= 4 {
-					v = e[3]
-				} else {
-					return List{} // false, but no alt sexp
-				}
-			} else if car == "quote" {
+			if car == "quote" {
 				// special form quote just returns the following expression
 				// without evaluating it. (quote) -> ()
 				if len(e) < 2 {
 					return List{}
 				}
 				return e[1]
+			} else if car == "quasiquote" {
+				// must be in form of (quasiquote <list>)
+				if len(e) != 2 {
+					return List{}
+				}
+				listSexp, isList := e[1].(List)
+				if !isList {
+					return List{}
+				}
+
+				return expandQuasiquote(listSexp, env)
 			} else if car == "define" {
 				// special form to modify the environment
 				if len(e) < 3 {
@@ -110,6 +100,29 @@ func Eval(v Value, env *Environment) Value {
 				proc.Args = argList
 				proc.Body = e[2]
 				return proc
+			} else if car == "if" {
+				// special form for if. If the condition doesn't evaluate
+				// to a bool, then neither conseq or altern get evaluated and
+				// an empty list is returned.
+				if len(e) <= 2 {
+					// must atleast have (if <cond> <conseq>)
+					return List{}
+				}
+
+				cond := Eval(e[1], env)
+				condBool, isCondBool := cond.(Bool)
+				if !isCondBool {
+					return List{}
+				}
+
+				// tail-call update the value being evaulated in the loop
+				if condBool {
+					v = e[2]
+				} else if len(e) >= 4 {
+					v = e[3]
+				} else {
+					return List{} // false, but no alt sexp
+				}
 			} else {
 				// check the environment for a procedure
 				proc, found := env.Find(car)
@@ -144,4 +157,14 @@ func Eval(v Value, env *Environment) Value {
 			}
 		}
 	}
+}
+
+// expandQuasiquote can be called recurisvely while expanding a quasiquote sexp.
+//
+// quasiquote has special functions to evaluate within the list:
+//	* unquote
+//  * unquote-splicing
+func expandQuasiquote(listSexp List, env *Environment) Value {
+	// quote would return this: the list param without eval.
+	return listSexp
 }

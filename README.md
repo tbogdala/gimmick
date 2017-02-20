@@ -63,7 +63,7 @@ Interpreter Features
 
 * basic interpreter easily callable from [Go][golang]
 * uses symbolic expressions (sexp) for code and data like a lisp
-* supports types: int64, float64, boolean, lists, symbols
+* supports types: int64, float64, boolean, lists, symbols and strings
 * basic math operations: `+`, `-`, `*`, `/`
 * basic comparisons: `<`, `>`, `<=`, `>=`, `eqv?`
 * basic special forms: `quote`, `if`, `define`, `begin`
@@ -98,11 +98,13 @@ Example Code
 A small example would look like this:
 
 ```lisp
-(define fib (lambda (n) 
+(begin
+ (define fib (lambda (n) 
     (if (< n 2) 
         1 
         (+ (fib (- n 1)) (fib (- n 2))))))
-(fib 30)        
+ (fib 30)        
+)
 ```
 
 Known Bugs

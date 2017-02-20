@@ -49,6 +49,9 @@ type Integer int64
 // Bool is a boolean true or false value
 type Bool bool
 
+// String is the string type value
+type String string
+
 // Symbol is the type for the symbol values
 type Symbol string
 
@@ -77,6 +80,7 @@ const (
 	tokenINTEGER
 	tokenFLOAT
 	tokenBOOL
+	tokenSTRING
 	tokenOPENPARENS
 	tokenCLOSEPARENS
 )
@@ -108,6 +112,8 @@ func GetTypeString(v Value) string {
 		return "INTEGER"
 	case Bool:
 		return "BOOL"
+	case String:
+		return "STRING"
 	case Symbol:
 		return "SYMBOL"
 	case List:

@@ -95,6 +95,9 @@ func buildValueFromTokens(tokens []token) (Value, []token, error) {
 		}
 		return Bool(bVal), remainingTokens, nil
 
+	case tokenSTRING:
+		return String(t.Token), remainingTokens, nil
+
 	case tokenILLEGAL:
 		return nil, remainingTokens, NewSyntaxError(fmt.Sprintf("Illegal token found while parsing (%s).", t.Token), t.Filename, t.LineNumber)
 
@@ -127,11 +130,39 @@ func tokenize(source *bufio.Reader, filename string) []token {
 	tokens := []token{}
 
 	currentLine := 1
+	stringMode := false
+	var stringBuffer bytes.Buffer
 	for {
 		// read in the next rune
 		ch := read(source)
-		if ch == rune(0) {
+		if ch == rune(0) { // EOF
 			return tokens
+		}
+
+		// deal with string mode first. if a string is being tokenized, everything
+		// goes into the string until the ending doublequote is found. this will
+		// include newline characters.
+		if ch == rune('"') {
+			if !stringMode {
+				// if we're not already capturing a string, lets start
+				stringMode = true
+
+			} else {
+				// we've finished with the string, so add it as a token
+				stringMode = false
+				tokens = append(tokens, token{
+					Token:      stringBuffer.String(),
+					Type:       tokenSTRING,
+					LineNumber: currentLine})
+				stringBuffer.Reset()
+			}
+			continue
+		} else {
+			// it's not a double quote, so if we're in string mode just gobble all runes
+			if stringMode {
+				stringBuffer.WriteRune(ch)
+				continue
+			}
 		}
 
 		// parse the rune/token
@@ -179,13 +210,13 @@ func scanWhitespace(source *bufio.Reader, filename string, line int) int {
 	// now keep reading runes until we find a non-whitespace one
 	for {
 		ch := read(source)
-		if ch == rune(0) {
+		if ch == rune(0) { // EOF
 			break
-		} else if !isWhitespace(ch) {
+		} else if !isWhitespace(ch) { // !WS
 			unread(source)
 			break
 		} else {
-			if isNewline(ch) {
+			if isNewline(ch) { // lc++ on newline
 				lineCountToAdd++
 			}
 		}
@@ -195,6 +226,9 @@ func scanWhitespace(source *bufio.Reader, filename string, line int) int {
 	return line + lineCountToAdd
 }
 
+// scanAtom gets called for everything that's not whitespace or '(' or ')'
+// and must therefore distinguish between the other types such as numbers,
+// bools and strings.
 func scanAtom(source *bufio.Reader, filename string, line int) token {
 	var t token
 	var b bytes.Buffer
@@ -212,6 +246,7 @@ func scanAtom(source *bufio.Reader, filename string, line int) token {
 		}
 	}
 
+	// at this point, we have our 'word' string, so make it a token
 	t.Token = b.String()
 	t.Filename = filename
 	t.LineNumber = line
