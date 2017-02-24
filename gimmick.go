@@ -71,6 +71,8 @@ type Procedure struct {
 
 	// Args is the list of procedure arguments accepted
 	Args List
+
+	VariableParameters bool
 }
 
 // enumeration values for the parsed tokens

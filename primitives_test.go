@@ -471,6 +471,34 @@ func TestBasicLambdaForms(t *testing.T) {
 
 	// test calling a function that doesn't exist
 	doTestEvalForList(t, env, List{}, "(x3 500 500 500.1)")
+
+	// test variable number of parameters
+	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3), Integer(4), Integer(5)}, `(begin 
+		(define foo (lambda (x y . z)
+			(quasiquote (,x ,y ,@z))))
+		(foo 1 2 3 4 5)))
+		`)
+	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3)}, `(begin 
+		(define foo (lambda (x y . z)
+			(quasiquote (,x ,y ,@z))))
+		(foo 1 2 3)))
+		`)
+	doTestEvalForList(t, env, List{Integer(1), Integer(2)}, `(begin 
+		(define foo (lambda (x y . z)
+			(quasiquote (,x ,y ,@z))))
+		(foo 1 2)))
+		`)
+	doTestEvalForList(t, env, List{Integer(1), Integer(2), Integer(3), Integer(4), Integer(5), String("Peanut")}, `(begin 
+		(define foo (lambda (x y . z)
+			(quasiquote (,x ,y ,@z))))
+		(foo 1 2 3 4 5 "Peanut")))
+		`)
+	doTestEvalForList(t, env, List{Integer(1), Integer(2), List{Integer(3), Integer(4), Integer(5)}}, `(begin 
+		(define foo (lambda (x y . z)
+			(quasiquote (,x ,y ,z))))
+		(foo 1 2 3 4 5)))
+		`)
+
 }
 
 func TestBasicTimedApply(t *testing.T) {

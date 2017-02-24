@@ -76,6 +76,8 @@ func Eval(v Value, env *Environment) Value {
 				}
 				return val
 			} else if car == "lambda" {
+				var proc Procedure
+
 				// special form for defining functions
 				if len(e) < 3 {
 					return List{}
@@ -92,10 +94,12 @@ func Eval(v Value, env *Environment) Value {
 					if _, isArgSymbol := argItem.(Symbol); !isArgSymbol {
 						return List{}
 					}
+					if argItem == Symbol(".") {
+						proc.VariableParameters = true
+					}
 				}
 
 				// build the procedure object
-				var proc Procedure
 				proc.ParentEnv = env
 				proc.Args = argList
 				proc.Body = e[2]
@@ -136,13 +140,33 @@ func Eval(v Value, env *Environment) Value {
 					// is it a user defined function
 					procedure, isProcedure := proc.(Procedure)
 					if isProcedure {
-						// make sure it's called with the same number of arguments
-						if len(e)-1 != len(procedure.Args) {
+						// make sure it's called with the same number of arguments if
+						// the procedure doesn't support variable number of arguments
+						if !procedure.VariableParameters && (len(e)-1 != len(procedure.Args)) {
 							return List{}
 						}
 						pEnv := NewEnvironment(procedure.ParentEnv)
+
+						variableMode := false
+
 						for argI, argV := range procedure.Args {
-							pEnv.Vars[argV.(Symbol)] = Eval(e[argI+1], env)
+							if argV == Symbol(".") {
+								variableMode = true
+								continue
+							}
+							if variableMode {
+								// if we have variable parameters, then all the rest of the
+								// arguments passed into the lambda get bound to the symbol
+								// right afer the "." symbol as a list. The symbol is this argV
+								// if variableMode is true.
+								rest := List{}
+								for i := argI; i < len(e); i++ {
+									rest = append(rest, Eval(e[i], env))
+								}
+								pEnv.Vars[argV.(Symbol)] = rest
+							} else {
+								pEnv.Vars[argV.(Symbol)] = Eval(e[argI+1], env)
+							}
 						}
 
 						// tail-call support means we don't Eval the procedure.Body here,

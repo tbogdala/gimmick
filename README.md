@@ -73,6 +73,7 @@ Interpreter Features
   and `unquote-splicing` as comma-ampersand (,@)
 * basic lisp list functions: `list`, `car`, `cdr`
 * function construction (no variable arity yet): `lambda`
+* variable number of parameters with the form: `(lambda (x y . z) ...)`
 * basic timing for benchmarks: `(timed-apply <proc> <args>*)`
 * tail-call optimized
 
