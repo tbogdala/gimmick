@@ -570,3 +570,26 @@ func TestBasicTimedApply(t *testing.T) {
 		t.Errorf("Failed to evaluate to the correct value for \"%s\". Got: %v", code, listVal)
 	}
 }
+
+func TestBasicMacros(t *testing.T) {
+	// setup the test environment
+	baseEnv := NewEnvironment(nil)
+	baseEnv.SetupPrimitives()
+
+	// add in some test macros
+	code := "(defmacro macro1 (cond conseq alt) `(if ,cond ,conseq ,alt)))"
+	sexp, err := ParseString(code)
+	if err != nil {
+		t.Errorf("Unable to parse macro code: %v\nCode:\n%s\n", err, code)
+	}
+	Eval(sexp, baseEnv)
+
+	// copy environment to avoid polluting original Environment
+	env := baseEnv.Copy()
+
+	doTestEvalForInt(t, env, Integer(10), `(begin 
+		(define testBool true)
+		(macro1 testBool (+ 5 5) (- 0 10))
+		)`)
+
+}

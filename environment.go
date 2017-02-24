@@ -8,6 +8,10 @@ type Environment struct {
 	// Vars are the symbol mappings for the environment context
 	Vars map[Symbol]Value
 
+	// Macros is the collection of syntax extension procedures that can
+	// expand incoming symbolic expressions before executing them.
+	Macros map[Symbol]Procedure
+
 	// Parent is the enclosing environment object
 	Parent *Environment
 }
@@ -16,6 +20,7 @@ type Environment struct {
 func NewEnvironment(parent *Environment) *Environment {
 	env := new(Environment)
 	env.Vars = make(map[Symbol]Value)
+	env.Macros = make(map[Symbol]Procedure)
 	env.Parent = parent
 	return env
 }
@@ -26,6 +31,9 @@ func (env *Environment) Copy() *Environment {
 	copy := NewEnvironment(env.Parent)
 	for k, v := range env.Vars {
 		copy.Vars[k] = v
+	}
+	for k, v := range env.Macros {
+		copy.Macros[k] = v
 	}
 	return copy
 }
@@ -45,6 +53,23 @@ func (env *Environment) Find(s Symbol) (Value, bool) {
 
 	// total failure
 	return nil, false
+}
+
+// FindMacro attempts to find the symbol in the current environment macros or
+// it's parent environment. Returns a bool indicating if the macro Procedure was found.
+func (env *Environment) FindMacro(s Symbol) (p Procedure, success bool) {
+	v, found := env.Macros[s]
+	if found {
+		return v, true
+	}
+
+	// not found; check the Parent
+	if env.Parent != nil {
+		return env.Parent.FindMacro(s)
+	}
+
+	// total failure
+	return p, false
 }
 
 // SetupPrimitives will add in the primitive functions to the given environment.

@@ -74,6 +74,7 @@ Interpreter Features
 * basic lisp list functions: `list`, `car`, `cdr`
 * function construction (no variable arity yet): `lambda`
 * variable number of parameters with the form: `(lambda (x y . z) ...)`
+* non-hygienic macros (lisp style) with the form: `(defmacro name (args) body)`
 * basic timing for benchmarks: `(timed-apply <proc> <args>*)`
 * tail-call optimized
 

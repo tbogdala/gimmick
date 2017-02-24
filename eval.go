@@ -104,6 +104,46 @@ func Eval(v Value, env *Environment) Value {
 				proc.Args = argList
 				proc.Body = e[2]
 				return proc
+			} else if car == "defmacro" {
+				// special form to expand symbolic expressions at runtime.
+				// (macro name (<arg-name>*) <body>)
+				if len(e) < 4 {
+					return List{}
+				}
+
+				// name should be a symbol
+				macroName, isNameFound := e[1].(Symbol)
+				if !isNameFound {
+					return List{}
+				}
+
+				var macro Procedure
+
+				// check the thrid item in the list to make
+				// sure it's a list of symbols. if it's not, just
+				// return an empty list.
+				argList, isArgList := e[2].(List)
+				if !isArgList {
+					return List{}
+				}
+				for _, argItem := range argList {
+					if _, isArgSymbol := argItem.(Symbol); !isArgSymbol {
+						return List{}
+					}
+					if argItem == Symbol(".") {
+						macro.VariableParameters = true
+					}
+				}
+
+				// build the macro object
+				macro.ParentEnv = env
+				macro.Args = argList
+				macro.Body = e[3]
+
+				// update the environment for the new macro definition
+				env.Macros[macroName] = macro
+
+				return macro
 			} else if car == "if" {
 				// special form for if. If the condition doesn't evaluate
 				// to a bool, then neither conseq or altern get evaluated and
@@ -128,6 +168,47 @@ func Eval(v Value, env *Environment) Value {
 					return List{} // false, but no alt sexp
 				}
 			} else {
+				// check the environment to see if it's a macro
+				// NOTE: this is possible
+				macro, isMacro := env.FindMacro(car)
+				if isMacro {
+					// make sure it's called with the same number of arguments if
+					// the procedure doesn't support variable number of arguments
+					if !macro.VariableParameters && (len(e)-1 != len(macro.Args)) {
+						return List{}
+					}
+					pEnv := NewEnvironment(macro.ParentEnv)
+
+					variableMode := false
+
+					for argI, argV := range macro.Args {
+						if argV == Symbol(".") {
+							variableMode = true
+							continue
+						}
+						if variableMode {
+							// if we have variable parameters, then all the rest of the
+							// arguments passed into the lambda get bound to the symbol
+							// right afer the "." symbol as a list. The symbol is this argV
+							// if variableMode is true.
+							rest := List{}
+							for i := argI; i < len(e); i++ {
+								rest = append(rest, e[i])
+							}
+							pEnv.Vars[argV.(Symbol)] = rest
+						} else {
+							pEnv.Vars[argV.(Symbol)] = e[argI+1]
+						}
+					}
+
+					// evaluate the macro to expand and return the result
+					retVal := Eval(macro.Body, pEnv)
+
+					// since this is a macro we then evaluate the result
+					retVal = Eval(retVal, env)
+					return retVal
+				}
+
 				// check the environment for a procedure
 				proc, found := env.Find(car)
 				if found {
