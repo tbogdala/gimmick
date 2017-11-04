@@ -2,7 +2,7 @@
 // See the LICENSE file for more details.
 
 /*
-gimmick is a lisp-like interpretter for Go.
+gimmick is a lisp-like interpreter for Go.
 
 Current Features
 ----------------

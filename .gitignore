@@ -5,3 +5,4 @@
 .vscode
 cmd/gimmick/*.gmk
 cmd/gimmick/*.exe
+cmd/gimmick/gimmick

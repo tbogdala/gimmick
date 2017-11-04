@@ -11,7 +11,7 @@ that can be called from within a [Go][golang] program.
 Requirements
 ------------
 
-* [readline][chzyer] - a Go library implementing readline features for the REPL
+* [readline][chzyer] - a Go library implementing readline features (`cmd/gimmick` REPL dependency only)
 
 
 Installation
@@ -68,15 +68,17 @@ Interpreter Features
 * basic math operations: `+`, `-`, `*`, `/`
 * basic comparisons: `<`, `>`, `<=`, `>=`, `eqv?`
 * basic special forms: `quote`, `quasiquote`, `unquote`, `unquote-splicing`, 
-  `if`, `define`, `begin`
+  `if`, `define`, `begin`, `lambda`, `defmacro`
 * special syntax for: `quasiquote` as backquote (\`), `unquote` as a comma (,),
   and `unquote-splicing` as comma-ampersand (,@)
 * basic lisp list functions: `list`, `car`, `cdr`
-* function construction (no variable arity yet): `lambda`
+* function construction: `lambda`
 * variable number of parameters with the form: `(lambda (x y . z) ...)`
 * non-hygienic macros (lisp style) with the form: `(defmacro name (args) body)`
 * basic timing for benchmarks: `(timed-apply <proc> <args>*)`
 * tail-call optimized
+
+A more verbose guide to the current language features can be found in `SYNTAX.md`.
 
 
 To Do

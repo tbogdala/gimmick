@@ -359,6 +359,7 @@ func TestBasicListOps(t *testing.T) {
 
 	doTestEvalForInt(t, env, 1, "(car (list 1 2 3))")
 	doTestEvalForInt(t, env, 4, "(car (list 4 2 3) 2)")
+	doTestEvalForList(t, env, List{Integer(2), Integer(3)}, "(cdr (list 1 2 3))")
 }
 
 func TestBasicConditionals(t *testing.T) {
@@ -469,6 +470,10 @@ func TestBasicLambdaForms(t *testing.T) {
 		(define foo (lambda (x y z) (+ x y z))) 
 		(foo 5 10 20))`)
 
+	// test lambda forms as the first expression in a list
+	doTestEvalForInt(t, env, 35, `((lambda (x) (+ x 25)) 10)`)
+	doTestEvalForInt(t, env, 35, `(begin ((lambda (x y) (+ x y)) 10 25))`)
+
 	// test calling a function that doesn't exist
 	doTestEvalForList(t, env, List{}, "(x3 500 500 500.1)")
 
@@ -499,6 +504,24 @@ func TestBasicLambdaForms(t *testing.T) {
 		(foo 1 2 3 4 5)))
 		`)
 
+	doTestEvalForInt(t, env, 6, `(let ((x 2) (y 3)) (* x y))`)
+	doTestEvalForInt(t, env, 35, `
+	(let ((x 2) (y 3))
+	(let ((x 7)
+		  (z (+ x y)))
+	  (* z x)))`)
+
+	doTestEvalForInt(t, env, 70, `
+	(let ((x 2) (y 3))
+	  (let* ((x 7)
+			 (z (+ x y)))
+		(* z x)))`)
+
+	doTestEvalForBool(t, env, true, `
+	(letrec ((zero? (lambda (x) (eqv? x 0)))
+		     (even? (lambda (n) (if (zero? n) true (odd? (- n 1)))))
+		     (odd?  (lambda (n) (if (zero? n) false (even? (- n 1))))))
+	(even? 88))`)
 }
 
 func TestBasicTimedApply(t *testing.T) {

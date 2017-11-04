@@ -29,6 +29,26 @@ func Eval(v Value, env *Environment) Value {
 
 			car, found := e[0].(Symbol)
 			if !found {
+				// if the first item in a list is not a symbol, see if it evaluates to a
+				// procedure that can then be called
+				evaluatedFirst := Eval(e[0], env)
+				firstAsProc, foundProc := evaluatedFirst.(Procedure)
+				if foundProc {
+					// make sure it's called with the same number of arguments if
+					// the procedure doesn't support variable number of arguments
+					if !firstAsProc.VariableParameters && (len(e)-1 != len(firstAsProc.Args)) {
+						return List{}
+					}
+
+					pEnv := bindNewEnvForProc(&firstAsProc, e, env)
+
+					// tail-call support means we don't Eval the procedure.Body here,
+					// and instead update v and env and restart the loop
+					v = firstAsProc.Body
+					env = pEnv
+					continue
+				}
+
 				return e[0] // int/float
 			}
 
@@ -75,6 +95,74 @@ func Eval(v Value, env *Environment) Value {
 					val = Eval(subSexp, env)
 				}
 				return val
+			} else if car == "let" || car == "let*" || car == "letrec" {
+				if len(e) < 3 {
+					return List{}
+				}
+
+				pEnv := NewEnvironment(env)
+
+				// the first parameter to let should be a list of pairs, with
+				// each pair being a (symbol sexp) form. any violation of this
+				// and an empty list is returned.
+				argList, isArgList := e[1].(List)
+				if !isArgList {
+					return List{}
+				}
+
+				// if this is a letrec, then go through the arglist and bind
+				// empty list values for all of the parameters so that the
+				// symbols exist in the environment.
+				if car == "letrec" {
+					for _, argItem := range argList {
+						argItemList, isArgItemList := argItem.(List)
+						if !isArgItemList {
+							return List{}
+						} else if len(argItemList) != 2 {
+							return List{}
+						}
+
+						letSym, foundSym := argItemList[0].(Symbol)
+						if !foundSym {
+							return List{}
+						}
+
+						pEnv.Vars[letSym] = List{}
+					}
+				}
+
+				for _, argItem := range argList {
+					argItemList, isArgItemList := argItem.(List)
+					if !isArgItemList {
+						return List{}
+					} else if len(argItemList) != 2 {
+						return List{}
+					}
+
+					letSym, foundSym := argItemList[0].(Symbol)
+					if !foundSym {
+						return List{}
+					}
+
+					// default case is `let` where each binding is evaluated in the
+					// parent environment, unaffected by bindings currently being set.
+					evalEnv := env
+					if car != "let" {
+						// let* and letrec parameter expressions are evaluated in an environment
+						// that has the previous variables in the list bound.
+						evalEnv = pEnv
+					}
+
+					// let parameter expressions are evaluated in current environment
+					letVal := Eval(argItemList[1], evalEnv)
+					// and then the binding is set in the new environment
+					pEnv.Vars[letSym] = letVal
+				}
+
+				// now adjust the evaluating environment
+				v = e[2]
+				env = pEnv
+
 			} else if car == "lambda" {
 				var proc Procedure
 
@@ -119,7 +207,7 @@ func Eval(v Value, env *Environment) Value {
 
 				var macro Procedure
 
-				// check the thrid item in the list to make
+				// check the third item in the list to make
 				// sure it's a list of symbols. if it's not, just
 				// return an empty list.
 				argList, isArgList := e[2].(List)
@@ -226,29 +314,8 @@ func Eval(v Value, env *Environment) Value {
 						if !procedure.VariableParameters && (len(e)-1 != len(procedure.Args)) {
 							return List{}
 						}
-						pEnv := NewEnvironment(procedure.ParentEnv)
 
-						variableMode := false
-
-						for argI, argV := range procedure.Args {
-							if argV == Symbol(".") {
-								variableMode = true
-								continue
-							}
-							if variableMode {
-								// if we have variable parameters, then all the rest of the
-								// arguments passed into the lambda get bound to the symbol
-								// right afer the "." symbol as a list. The symbol is this argV
-								// if variableMode is true.
-								rest := List{}
-								for i := argI; i < len(e); i++ {
-									rest = append(rest, Eval(e[i], env))
-								}
-								pEnv.Vars[argV.(Symbol)] = rest
-							} else {
-								pEnv.Vars[argV.(Symbol)] = Eval(e[argI+1], env)
-							}
-						}
+						pEnv := bindNewEnvForProc(&procedure, e, env)
 
 						// tail-call support means we don't Eval the procedure.Body here,
 						// and instead update v and env and restart the loop
@@ -264,12 +331,40 @@ func Eval(v Value, env *Environment) Value {
 	}
 }
 
-// expandQuasiquote can be called recurisvely while expanding a quasiquote sexp.
+func bindNewEnvForProc(procedure *Procedure, e List, env *Environment) *Environment {
+	pEnv := NewEnvironment(procedure.ParentEnv)
+
+	variableMode := false
+
+	for argI, argV := range procedure.Args {
+		if argV == Symbol(".") {
+			variableMode = true
+			continue
+		}
+		if variableMode {
+			// if we have variable parameters, then all the rest of the
+			// arguments passed into the lambda get bound to the symbol
+			// right after the "." symbol as a list. The symbol is this argV
+			// if variableMode is true.
+			rest := List{}
+			for i := argI; i < len(e); i++ {
+				rest = append(rest, Eval(e[i], env))
+			}
+			pEnv.Vars[argV.(Symbol)] = rest
+		} else {
+			pEnv.Vars[argV.(Symbol)] = Eval(e[argI+1], env)
+		}
+	}
+
+	return pEnv
+}
+
+// expandQuasiquote can be called recursively while expanding a quasiquote sexp.
 // quasiquote has special functions to evaluate within the list:
 //	* unquote
 //  * unquote-splicing
 func expandQuasiquote(listSexp List, env *Environment) Value {
-	// intial call of this function will have listSexp == the entire
+	// initial call of this function will have listSexp == the entire
 	// list to expand.
 	//
 	// e.g. (quasiquote (1 (unquote (+ 5 5)) 21))
