@@ -230,6 +230,9 @@ func tokenize(source *bufio.Reader, filename string) []token {
 			} else {
 				tokens = append(tokens, token{Token: ",@", Type: tokenUNQUOTESPLICING, LineNumber: currentLine})
 			}
+		} else if ch == ';' {
+			gobbleRestOfLine(source) // comments go until the end of the line
+			currentLine++
 		} else {
 			unread(source)
 			tokens = append(tokens, scanAtom(source, filename, currentLine))
@@ -251,6 +254,16 @@ func isParens(ch rune) bool {
 
 func isNumber(ch rune) bool {
 	return (ch >= '0' && ch <= '9')
+}
+
+// gobbleRestOfLines reads the rest of the runes until a newline appears.
+func gobbleRestOfLine(source *bufio.Reader) {
+	for {
+		c := read(source)
+		if c == rune(0) || isNewline(c) {
+			break
+		}
+	}
 }
 
 // scanWhitespace reads from the source Reader until a non-whitespace character is

@@ -239,3 +239,15 @@ The following example might evaluate to something like `(60 6.3885e-05)`.
   (define foo (lambda (x) (+ x x)))
   (timed-apply foo 30))
 ```
+
+
+Differences from Scheme
+-----------------------
+
+Some of these are by design and some of these are just current limitations. This list
+may also be incomplete.
+
+* variables are strongly typed
+* #t/#f are `true` and `false`
+* no continuations
+* no error support

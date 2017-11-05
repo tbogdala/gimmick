@@ -212,11 +212,14 @@ func TestBasicTokenSingleline(t *testing.T) {
 
 func TestBasicTokenMultiline(t *testing.T) {
 	code := `(begin
+; second line is a comment
+(define r 10) ; this comment gets ignored
 
-(define r 10)
 
+(* pi (* r r)))
 
-(* pi (* r r)))`
+; this last line is a comment
+`
 
 	knownGood := []token{}
 	knownGood = append(knownGood, token{Token: "(", Type: tokenOPENPARENS, LineNumber: 1})
