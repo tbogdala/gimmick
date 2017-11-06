@@ -241,6 +241,27 @@ The following example might evaluate to something like `(60 6.3885e-05)`.
 ```
 
 
+Ruse
+----
+
+Ruse is an embedded HTTP server that can be used for other programs to interact with a
+gimmick environment. The default use case for this is starting the ruse server in the
+gimmick REPL and then having editors or other programs evaluate code within the REPL environment.
+
+### lambda start-ruse: _(start-ruse hostname-str port-int)_
+
+The `start-ruse` function will start the ruse HTTP server within the current environment
+context. The `hostname-str` and `port-int` parameters are optional and default to `"localhost"`
+and `4005` respectively. If the server is successfully started the function will evaluate to `true`;
+`false` is returned on failure.
+
+### lambda stop-ruse: _(stop-ruse)_
+
+The `stop-ruse` function will stop the running ruse HTTP server if it was started in the
+current environment. If the server was shutdown successfully the function will evaluate to `true`;
+`false` is returned on failure.
+
+
 Differences from Scheme
 -----------------------
 

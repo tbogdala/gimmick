@@ -1,7 +1,7 @@
 GIMMICK v0.1.0-development
 ==========================
 
-Gimmick is a lisp language that aims to feature static typing, first class concurrency support
+Gimmick aims to be a lisp language that features static type checking, first class concurrency support
 and native code generation on top of a classic Scheme-like core. 
 
 At present, all of these features are missing and only a basic interpreter exists
@@ -12,7 +12,7 @@ Requirements
 ------------
 
 * [readline][chzyer] - a Go library implementing readline features (`cmd/gimmick` REPL dependency only)
-
+* [echo][echo] - a Go http router used for the Ruse server
 
 Installation
 ------------
@@ -64,6 +64,7 @@ Interpreter Features
 
 * basic interpreter easily callable from [Go][golang]
 * uses symbolic expressions (sexp) for code and data like a lisp
+* embedded HTTP server within the REPL for editor integration
 * supports types: int64, float64, boolean, lists, symbols and strings
 * basic math operations: `+`, `-`, `*`, `/`
 * basic comparisons: `<`, `>`, `<=`, `>=`, `eqv?`
@@ -89,11 +90,10 @@ Many major features are yet to come:
 * transition unit tests to gimmick itself
 * module system
 * structures
-* static typing
+* static type checking
 * concurrency support
 * consider possible error handling mechanisms
 * native code generation
-* editor integration like [SLIME][slime] for lisp in emacs
 * debugging support 
 * consider a 'safe' compilation/interpreter method that will not
   have functions like `set!` supported to fully enforce a non-mutable
@@ -119,7 +119,8 @@ Known Bugs
 ----------
 
 * (Windows only) The [readline][chzyer] library used doesn't play nice with the terminal
-  from msys2/mingw-w64, but the executable works fine from the basic command prompt.
+  from msys2/mingw-w64, `mintty`, but the executable works fine from the basic command prompt
+  or other terminals such as [cmder][cmder].
 
 
 History and Thanks
@@ -130,7 +131,7 @@ One major influence on how this projected developed was Peter Norvig's article
 [Write Yourself a Scheme in 48 Hours][wyas48] back in my Haskell days. I messed around
 with it and started to believe in my ability to get something of my own up and running.
 
-In the interrim, I spent some time working with Lua having embedded it in my C graphics
+In the interim, I spent some time working with Lua having embedded it in my C graphics
 library called [Portable Glue][pg]. All this time I wanted to use Scheme but things
 didn't work out despite some early success with [my Gambit-C usage][am-scheme].
 
@@ -149,6 +150,7 @@ Gimmick is released under the BSD license. See the [LICENSE][license-link] file 
 
 [golang]: https://golang.org/
 [chzyer]: https://github.com/chzyer/readline
+[echo]: https://echo.labstack.com/
 [license-link]: https://raw.githubusercontent.com/tbogdala/gimmick/master/LICENSE
 
 [norvig1]: http://norvig.com/lispy.html
@@ -159,4 +161,4 @@ Gimmick is released under the BSD license. See the [LICENSE][license-link] file 
 [fizzle]: https://github.com/tbogdala/fizzle
 [pg]: https://bitbucket.org/tbogdala/portableglue
 [slime]: https://common-lisp.net/project/slime/
-
+[cmder]: http://cmder.net/

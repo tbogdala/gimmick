@@ -14,6 +14,9 @@ type Environment struct {
 
 	// Parent is the enclosing environment object
 	Parent *Environment
+
+	// ruseCmd is the command channel for a ruse server
+	ruseCmd chan RuseCommand
 }
 
 // NewEnvironment creates a new environment context with an optional parent context.
@@ -29,6 +32,7 @@ func NewEnvironment(parent *Environment) *Environment {
 // that changes to the copy do not affect the Vars of the original Environment.
 func (env *Environment) Copy() *Environment {
 	copy := NewEnvironment(env.Parent)
+	copy.ruseCmd = env.ruseCmd
 	for k, v := range env.Vars {
 		copy.Vars[k] = v
 	}
@@ -87,4 +91,6 @@ func (env *Environment) SetupPrimitives() {
 	env.Vars["car"] = Primitive(primCar)
 	env.Vars["cdr"] = Primitive(primCdr)
 	env.Vars["timed-apply"] = Primitive(primTimedApply)
+	env.Vars["start-ruse"] = Primitive(startRuse)
+	env.Vars["stop-ruse"] = Primitive(stopRuse)
 }
